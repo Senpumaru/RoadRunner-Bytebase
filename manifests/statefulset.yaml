@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bytebase
+  namespace: bytebase
+spec:
+  serviceName: "bytebase"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bytebase
+  template:
+    metadata:
+      labels:
+        app: bytebase
+    spec:
+      containers:
+        - name: bytebase
+          image: bytebase/bytebase:2.22.1
+          imagePullPolicy: Always
+          args:
+            - '--data'
+            - '/var/opt/bytebase'
+            - '--port'
+            - '8080'
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 300
+            periodSeconds: 300
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: bytebase-data
+              mountPath: /var/opt/bytebase
+  volumeClaimTemplates:
+    - metadata:
+        name: bytebase-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
